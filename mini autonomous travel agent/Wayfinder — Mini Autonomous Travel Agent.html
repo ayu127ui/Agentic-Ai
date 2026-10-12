@@ -1,0 +1,893 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Wayfinder — plan a trip without doing all the work</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;1,9..144,500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #182437;
+    --paper: #FAF5EA;
+    --paper-raised: #FFFFFF;
+    --teal: #2D7F76;
+    --teal-deep: #205A54;
+    --amber: #E4A339;
+    --amber-deep: #B87F22;
+    --slate: #63697A;
+    --coral: #C1443B;
+    --line: #DED4C0;
+    --line-strong: #C9BC9D;
+    --focus: #1E5FCC;
+    --font-display: 'Fraunces', Georgia, 'Times New Roman', serif;
+    --font-body: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    box-sizing: border-box;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  :root:not([data-theme="light"]) {
+    @media (prefers-color-scheme: dark) {
+      --ink: #F1ECE0;
+      --paper: #14181F;
+      --paper-raised: #1D2330;
+      --teal: #5FBAB0;
+      --teal-deep: #7ED0C6;
+      --amber: #F0B94F;
+      --amber-deep: #F6C96A;
+      --slate: #A9AEBC;
+      --coral: #E77B72;
+      --line: #333C4B;
+      --line-strong: #454F60;
+    }
+  }
+  :root[data-theme="dark"] {
+    --ink: #F1ECE0;
+    --paper: #14181F;
+    --paper-raised: #1D2330;
+    --teal: #5FBAB0;
+    --teal-deep: #7ED0C6;
+    --amber: #F0B94F;
+    --amber-deep: #F6C96A;
+    --slate: #A9AEBC;
+    --coral: #E77B72;
+    --line: #333C4B;
+    --line-strong: #454F60;
+  }
+  html { scroll-padding-top: env(safe-area-inset-top, 0px); }
+  * { box-sizing: inherit; }
+  html, body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--font-body);
+    line-height: 1.5;
+  }
+  body { min-height: 100%; }
+  a { color: var(--teal-deep); }
+  ::selection { background: var(--amber); color: var(--ink); }
+
+  :focus-visible {
+    outline: 3px solid var(--focus);
+    outline-offset: 2px;
+    border-radius: 2px;
+  }
+
+  .skip-link {
+    position: absolute;
+    left: -999px;
+    top: 0;
+    background: var(--ink);
+    color: var(--paper);
+    padding: 0.75em 1.25em;
+    z-index: 100;
+  }
+  .skip-link:focus { left: 1rem; top: 1rem; }
+
+  /* ---------- Hero ---------- */
+  .hero {
+    padding: clamp(2.5rem, 6vw, 4.5rem) 1.5rem 2rem;
+    text-align: center;
+    border-bottom: 1px solid var(--line);
+  }
+  .hero__mark {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 1.1rem;
+    color: var(--teal-deep);
+    margin-bottom: 1.75rem;
+  }
+  .hero__mark svg { width: 22px; height: 22px; }
+  .hero h1 {
+    font-family: var(--font-display);
+    font-weight: 500;
+    font-size: clamp(2rem, 5vw, 3.1rem);
+    line-height: 1.08;
+    margin: 0 auto 0.9rem;
+    max-width: 18ch;
+    letter-spacing: -0.01em;
+  }
+  .hero h1 em {
+    font-style: italic;
+    color: var(--teal-deep);
+  }
+  .hero p {
+    max-width: 46ch;
+    margin: 0 auto;
+    color: var(--slate);
+    font-size: 1.05rem;
+  }
+
+  /* ---------- Layout ---------- */
+  .counter {
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: clamp(1.5rem, 4vw, 3rem) 1.5rem 5rem;
+    display: grid;
+    grid-template-columns: minmax(280px, 380px) 1fr;
+    gap: clamp(1.5rem, 4vw, 3rem);
+    align-items: start;
+  }
+  @media (max-width: 860px) {
+    .counter { grid-template-columns: 1fr; }
+  }
+
+  /* ---------- Form panel ---------- */
+  .panel {
+    background: var(--paper-raised);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 1.6rem;
+  }
+  .panel--sticky { position: sticky; top: 1.5rem; }
+  @media (max-width: 860px) { .panel--sticky { position: static; } }
+
+  .panel__eyebrow {
+    font-family: var(--font-body);
+    font-weight: 600;
+    font-size: 0.95rem;
+    color: var(--ink);
+    margin: 0 0 0.15rem;
+  }
+  .panel__hint {
+    color: var(--slate);
+    font-size: 0.9rem;
+    margin: 0 0 1.4rem;
+  }
+
+  .field { margin-bottom: 1.1rem; }
+  .field label {
+    display: block;
+    font-size: 0.88rem;
+    font-weight: 600;
+    margin-bottom: 0.35rem;
+  }
+  .field .sub {
+    font-weight: 400;
+    color: var(--slate);
+  }
+  .field input, .field select {
+    width: 100%;
+    font: inherit;
+    font-size: 0.98rem;
+    padding: 0.65em 0.8em;
+    border: 1.5px solid var(--line-strong);
+    border-radius: 8px;
+    background: var(--paper);
+    color: var(--ink);
+  }
+  .field-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.8rem;
+  }
+
+  .memory-chip {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.55rem;
+    background: color-mix(in srgb, var(--teal) 12%, var(--paper-raised));
+    border: 1px solid color-mix(in srgb, var(--teal) 35%, var(--line));
+    border-radius: 10px;
+    padding: 0.7rem 0.85rem;
+    font-size: 0.86rem;
+    margin-bottom: 1.2rem;
+    color: var(--ink);
+  }
+  .memory-chip svg { flex-shrink: 0; margin-top: 0.15em; width: 16px; height: 16px; color: var(--teal-deep); }
+  .memory-chip button {
+    background: none; border: none; padding: 0; margin-left: 0.35em;
+    color: var(--teal-deep); text-decoration: underline; cursor: pointer; font: inherit; font-size: 0.86rem;
+  }
+
+  .btn {
+    font: inherit;
+    font-weight: 600;
+    font-size: 0.98rem;
+    padding: 0.8em 1.4em;
+    border-radius: 999px;
+    border: none;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5em;
+  }
+  .btn--primary { background: var(--ink); color: var(--paper); width: 100%; }
+  .btn--primary:hover { background: var(--teal-deep); }
+  .btn--approve { background: var(--teal); color: #fff; }
+  .btn--approve:hover { background: var(--teal-deep); }
+  .btn--decline { background: transparent; color: var(--coral); border: 1.5px solid var(--coral); }
+  .btn--decline:hover { background: color-mix(in srgb, var(--coral) 12%, transparent); }
+  .btn--ghost { background: transparent; color: var(--ink); border: 1.5px solid var(--line-strong); }
+  .btn--ghost:hover { border-color: var(--ink); }
+  .btn[disabled] { opacity: 0.55; cursor: not-allowed; }
+
+  .field-error {
+    color: var(--coral);
+    font-size: 0.85rem;
+    margin-top: 0.4rem;
+  }
+
+  /* ---------- Journey column ---------- */
+  .journey-empty {
+    border: 1.5px dashed var(--line-strong);
+    border-radius: 14px;
+    padding: 3rem 1.5rem;
+    text-align: center;
+    color: var(--slate);
+  }
+  .journey-empty svg { width: 40px; height: 40px; margin-bottom: 0.75rem; color: var(--line-strong); }
+  .journey-empty p { margin: 0; max-width: 32ch; margin-inline: auto; }
+
+  .route {
+    list-style: none;
+    margin: 0 0 2rem;
+    padding: 0;
+  }
+  .route__item {
+    position: relative;
+    padding-left: 2.4rem;
+    padding-bottom: 1.6rem;
+  }
+  .route__item:last-child { padding-bottom: 0; }
+  .route__item::before {
+    /* connecting line */
+    content: "";
+    position: absolute;
+    left: 0.65rem;
+    top: 1.6rem;
+    bottom: -0.1rem;
+    width: 2px;
+    background: var(--line);
+  }
+  .route__item:last-child::before { display: none; }
+  .route__item[data-state="done"]::before,
+  .route__item[data-state="active"]::before {
+    background: var(--teal);
+  }
+  .route__dot {
+    position: absolute;
+    left: 0;
+    top: 0.15rem;
+    width: 1.4rem;
+    height: 1.4rem;
+    border-radius: 50%;
+    border: 2px solid var(--line-strong);
+    background: var(--paper-raised);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .route__item[data-state="active"] .route__dot {
+    border-color: var(--teal);
+    animation: pulse 1.4s ease-in-out infinite;
+  }
+  .route__item[data-state="done"] .route__dot {
+    border-color: var(--teal);
+    background: var(--teal);
+  }
+  .route__item[data-state="done"] .route__dot svg { color: #fff; width: 0.85rem; height: 0.85rem; }
+  @media (prefers-reduced-motion: reduce) {
+    .route__item[data-state="active"] .route__dot { animation: none; }
+  }
+  @keyframes pulse {
+    0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--teal) 35%, transparent); }
+    50% { box-shadow: 0 0 0 5px color-mix(in srgb, var(--teal) 0%, transparent); }
+  }
+  .route__label {
+    font-weight: 600;
+    font-size: 0.98rem;
+    padding-top: 0.05rem;
+  }
+  .route__item[data-state="pending"] .route__label { color: var(--slate); }
+  .route__detail { margin-top: 0.7rem; }
+
+  /* ---------- Result cards ---------- */
+  .options {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 0.6rem;
+  }
+  .option {
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 0.75rem 0.95rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    background: var(--paper-raised);
+    font-size: 0.92rem;
+  }
+  .option__main { font-weight: 600; }
+  .option__meta { color: var(--slate); font-size: 0.85rem; margin-top: 0.15rem; }
+  .option__price { font-weight: 600; font-family: var(--font-display); font-size: 1.05rem; white-space: nowrap; }
+  .option--best { border-color: var(--teal); background: color-mix(in srgb, var(--teal) 7%, var(--paper-raised)); }
+  .option--best .option__badge {
+    display: inline-block; font-size: 0.72rem; font-weight: 600; color: var(--teal-deep);
+    background: color-mix(in srgb, var(--teal) 18%, transparent); padding: 0.1em 0.55em; border-radius: 999px; margin-bottom: 0.25em;
+  }
+
+  .weather-line {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    font-size: 0.95rem;
+  }
+  .weather-line svg { width: 20px; height: 20px; color: var(--amber-deep); flex-shrink: 0; }
+  .weather-source { color: var(--slate); font-size: 0.8rem; }
+
+  /* ---------- Ticket / boarding pass ---------- */
+  .ticket {
+    position: relative;
+    background: var(--paper-raised);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 1.5rem 1.6rem;
+    background-image:
+      radial-gradient(circle at 0 50%, var(--paper) 0, var(--paper) 8px, transparent 8px),
+      radial-gradient(circle at 100% 50%, var(--paper) 0, var(--paper) 8px, transparent 8px);
+    background-position: left 0 top 6.1rem, right 0 top 6.1rem;
+    background-repeat: no-repeat;
+  }
+  .ticket__perf {
+    border-top: 1.5px dashed var(--line-strong);
+    margin: 1.35rem -0.2rem 1.15rem;
+  }
+  .ticket__route {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+  .ticket__city { font-family: var(--font-display); font-weight: 600; font-size: 1.4rem; }
+  .ticket__city-sub { color: var(--slate); font-size: 0.82rem; margin-top: 0.1rem; }
+  .ticket__plane { color: var(--teal); flex-shrink: 0; }
+  .ticket__grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 1rem 1.2rem;
+  }
+  .ticket__stat-label {
+    font-size: 0.74rem;
+    color: var(--slate);
+    margin-bottom: 0.2rem;
+  }
+  .ticket__stat-value { font-weight: 600; font-size: 0.98rem; }
+  .ticket__total {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-top: 1.3rem;
+  }
+  .ticket__total-label { color: var(--slate); font-size: 0.9rem; }
+  .ticket__total-value { font-family: var(--font-display); font-weight: 600; font-size: 1.6rem; }
+
+  .approval-actions {
+    display: flex;
+    gap: 0.75rem;
+    margin-top: 1.4rem;
+    flex-wrap: wrap;
+  }
+  .approval-actions .btn { flex: 1 1 160px; }
+
+  .confirmation-banner {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    background: color-mix(in srgb, var(--teal) 14%, transparent);
+    border: 1px solid color-mix(in srgb, var(--teal) 40%, var(--line));
+    color: var(--teal-deep);
+    border-radius: 10px;
+    padding: 0.75rem 1rem;
+    font-weight: 600;
+    font-size: 0.95rem;
+    margin-bottom: 1.1rem;
+  }
+  .confirmation-banner svg { width: 20px; height: 20px; flex-shrink: 0; }
+  .confirmation-id { font-family: var(--font-display); font-size: 1.15rem; margin: 0 0 1rem; }
+
+  .decline-note {
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 1rem 1.15rem;
+    color: var(--slate);
+    font-size: 0.92rem;
+  }
+  .decline-note strong { color: var(--ink); }
+
+  section[aria-labelledby] h2 {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 1.15rem;
+    margin: 0 0 0.7rem;
+  }
+
+  .sr-only {
+    position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+    overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0;
+  }
+
+  footer {
+    text-align: center;
+    color: var(--slate);
+    font-size: 0.82rem;
+    padding: 0 1.5rem 3rem;
+  }
+</style>
+</head>
+<body>
+  <a class="skip-link" href="#trip-form">Skip to trip form</a>
+
+  <header class="hero">
+    <div class="hero__mark">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M3 12l7-1 4-8 2 1-3 7 6-1 2 2-7 3-1 6-2-1 1-6-7 2-1-3z"/>
+      </svg>
+      Wayfinder
+    </div>
+    <h1>Plan a trip without doing <em>all</em> the work</h1>
+    <p>Tell Wayfinder where you're headed. It searches flights and hotels, checks the weather, and only books once you say go.</p>
+  </header>
+
+  <main class="counter">
+
+    <!-- ============ TRIP FORM ============ -->
+    <section class="panel panel--sticky" aria-labelledby="form-heading">
+      <h2 id="form-heading" class="panel__eyebrow">Your trip</h2>
+      <p class="panel__hint">A few details and Wayfinder takes it from here.</p>
+
+      <div id="memory-chip" hidden></div>
+
+      <form id="trip-form">
+        <div class="field-row">
+          <div class="field">
+            <label for="origin">Leaving from</label>
+            <input id="origin" name="origin" type="text" list="cities" autocomplete="off" required value="Bengaluru">
+          </div>
+          <div class="field">
+            <label for="destination">Going to</label>
+            <input id="destination" name="destination" type="text" list="cities" autocomplete="off" required value="Goa">
+          </div>
+        </div>
+        <datalist id="cities">
+          <option value="Bengaluru"><option value="Goa"><option value="Mumbai">
+          <option value="Delhi"><option value="Jaipur"><option value="Kochi">
+        </datalist>
+
+        <div class="field-row">
+          <div class="field">
+            <label for="nights">Nights</label>
+            <input id="nights" name="nights" type="number" min="1" max="30" required value="3">
+          </div>
+          <div class="field">
+            <label for="budget">Most for flights <span class="sub">(optional)</span></label>
+            <input id="budget" name="budget" type="number" min="0" step="100" inputmode="numeric" placeholder="No limit">
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="area">Preferred hotel area <span class="sub">(optional)</span></label>
+          <select id="area" name="area">
+            <option value="">No preference</option>
+            <option value="Beachfront">Beachfront</option>
+            <option value="City Center">City Center</option>
+            <option value="Old Town">Old Town</option>
+            <option value="Airport Road">Airport Road</option>
+          </select>
+        </div>
+
+        <p class="field-error" id="form-error" role="alert" hidden></p>
+
+        <button class="btn btn--primary" type="submit" id="submit-btn">Plan my trip</button>
+      </form>
+    </section>
+
+    <!-- ============ JOURNEY ============ -->
+    <section aria-labelledby="journey-heading">
+      <h2 id="journey-heading" class="sr-only">Your trip planning progress</h2>
+
+      <div id="journey-empty" class="journey-empty">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M3 12l7-1 4-8 2 1-3 7 6-1 2 2-7 3-1 6-2-1 1-6-7 2-1-3z"/>
+        </svg>
+        <p>Fill in your trip on the left and Wayfinder will search, plan, and check in with you before booking anything.</p>
+      </div>
+
+      <div id="journey-live" aria-live="polite">
+        <ol class="route" id="route" hidden></ol>
+        <div id="approval-zone"></div>
+        <div id="result-zone"></div>
+      </div>
+    </section>
+
+  </main>
+
+  <footer>
+    Demo agent — flight, hotel and weather data are simulated, not live. No real bookings or payments are made.
+  </footer>
+
+<script>
+(function () {
+  "use strict";
+
+  /* ---------------------------------------------------------------
+     MOCK DATA + TOOLS  (ported from the Python agent's TOOLBOX)
+  --------------------------------------------------------------- */
+  const FLIGHTS = [
+    { airline: "IndiGo", flight: "6E 204", price: 4200, depart: "06:10", arrive: "08:35", stops: 0 },
+    { airline: "Air India", flight: "AI 505", price: 5100, depart: "09:00", arrive: "11:20", stops: 0 },
+    { airline: "Vistara", flight: "UK 815", price: 3800, depart: "14:45", arrive: "19:10", stops: 1 },
+    { airline: "SpiceJet", flight: "SG 112", price: 3500, depart: "22:30", arrive: "00:55", stops: 0 },
+  ];
+  const HOTELS = [
+    { name: "Lakeview Residency", pricePerNight: 2200, rating: 4.3, area: "City Center" },
+    { name: "Budget Inn Express", pricePerNight: 1200, rating: 3.6, area: "Airport Road" },
+    { name: "The Grand Palm", pricePerNight: 6500, rating: 4.8, area: "Beachfront" },
+    { name: "Cozy Nest Homestay", pricePerNight: 1800, rating: 4.5, area: "Old Town" },
+  ];
+  const FORECASTS = ["Sunny, 29°C", "Light rain, 24°C", "Partly cloudy, 27°C", "Humid, 31°C", "Clear skies, 26°C"];
+
+  function searchFlights(budget) {
+    let options = FLIGHTS.filter(f => !budget || f.price <= budget);
+    options.sort((a, b) => a.price - b.price);
+    return options;
+  }
+  function searchHotels(preferredArea) {
+    let options = HOTELS.slice();
+    if (preferredArea) {
+      const filtered = options.filter(h => h.area === preferredArea);
+      if (filtered.length) options = filtered;
+    }
+    options.sort((a, b) => b.rating - a.rating);
+    return options;
+  }
+  function getWeather(destination) {
+    let seed = 0;
+    for (const ch of destination) seed += ch.charCodeAt(0);
+    return { forecast: FORECASTS[seed % FORECASTS.length] };
+  }
+
+  /* ---------------------------------------------------------------
+     MEMORY  (per-viewer, via localStorage — this is a per-browser
+     convenience, wrapped in try/catch; nothing is shared between people)
+  --------------------------------------------------------------- */
+  const MEM_KEY = "wayfinder_preferences_v1";
+  function loadMemory() {
+    try {
+      const raw = localStorage.getItem(MEM_KEY);
+      return raw ? JSON.parse(raw) : null;
+    } catch (e) { return null; }
+  }
+  function saveMemory(prefs) {
+    try { localStorage.setItem(MEM_KEY, JSON.stringify(prefs)); } catch (e) { /* ignore */ }
+  }
+  function clearMemory() {
+    try { localStorage.removeItem(MEM_KEY); } catch (e) { /* ignore */ }
+  }
+
+  /* ---------------------------------------------------------------
+     DOM references
+  --------------------------------------------------------------- */
+  const form = document.getElementById("trip-form");
+  const submitBtn = document.getElementById("submit-btn");
+  const formError = document.getElementById("form-error");
+  const journeyEmpty = document.getElementById("journey-empty");
+  const routeEl = document.getElementById("route");
+  const approvalZone = document.getElementById("approval-zone");
+  const resultZone = document.getElementById("result-zone");
+  const memoryChipEl = document.getElementById("memory-chip");
+
+  const iconCheck = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12l5 5L20 6"/></svg>';
+  const iconMemory = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8v4l3 2M21 12a9 9 0 11-9-9 9 9 0 019 9z"/></svg>';
+  const iconWeather = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17.5 19a4.5 4.5 0 000-9 6 6 0 00-11.4 1.5A4 4 0 007 19h10.5z"/></svg>';
+  const iconPlane = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12l7-1 4-8 2 1-3 7 6-1 2 2-7 3-1 6-2-1 1-6-7 2-1-3z"/></svg>';
+  const iconStop = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
+
+  /* ---------------------------------------------------------------
+     Restore remembered preferences on load
+  --------------------------------------------------------------- */
+  const remembered = loadMemory();
+  if (remembered) {
+    if (remembered.origin) form.origin.value = remembered.origin;
+    if (remembered.budget) form.budget.value = remembered.budget;
+    if (remembered.area) form.area.value = remembered.area;
+    renderMemoryChip(remembered);
+  }
+
+  function renderMemoryChip(prefs) {
+    const bits = [];
+    if (prefs.area) bits.push(prefs.area.toLowerCase() + " hotels");
+    if (prefs.budget) bits.push("flights under ₹" + Number(prefs.budget).toLocaleString("en-IN"));
+    if (!bits.length) { memoryChipEl.hidden = true; return; }
+    memoryChipEl.hidden = false;
+    memoryChipEl.innerHTML =
+      '<div class="memory-chip">' + iconMemory +
+      '<span>Remembered from last time: ' + bits.join(", ") + '. <button type="button" id="forget-btn">Forget this</button></span></div>';
+    document.getElementById("forget-btn").addEventListener("click", function () {
+      clearMemory();
+      memoryChipEl.hidden = true;
+      memoryChipEl.innerHTML = "";
+    });
+  }
+
+  /* ---------------------------------------------------------------
+     Journey step scaffolding
+  --------------------------------------------------------------- */
+  const STEP_DEFS = [
+    { id: "flights", label: "Searching flights" },
+    { id: "hotels", label: "Searching hotels" },
+    { id: "weather", label: "Checking the weather" },
+    { id: "itinerary", label: "Putting together your itinerary" },
+    { id: "approval", label: "Waiting for your approval" },
+    { id: "booking", label: "Booking your trip" },
+  ];
+
+  function buildRoute() {
+    routeEl.hidden = false;
+    routeEl.innerHTML = STEP_DEFS.map(function (s) {
+      return '<li class="route__item" data-step="' + s.id + '" data-state="pending">' +
+        '<span class="route__dot" aria-hidden="true"></span>' +
+        '<div class="route__label">' + s.label + '</div>' +
+        '<div class="route__detail" id="detail-' + s.id + '"></div>' +
+        '</li>';
+    }).join("");
+  }
+
+  function setStepState(stepId, state) {
+    const li = routeEl.querySelector('[data-step="' + stepId + '"]');
+    if (!li) return;
+    li.dataset.state = state;
+    const dot = li.querySelector(".route__dot");
+    dot.innerHTML = state === "done" ? iconCheck : "";
+  }
+
+  function setStepDetail(stepId, html) {
+    const el = document.getElementById("detail-" + stepId);
+    if (el) el.innerHTML = html;
+  }
+
+  function money(n) { return "₹" + Number(n).toLocaleString("en-IN"); }
+
+  function wait(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
+
+  /* ---------------------------------------------------------------
+     Main agent run — mirrors the Python lifecycle:
+     perceive -> plan -> (search flights -> search hotels -> weather)
+     -> reason (propose itinerary) -> human approval -> book / halt
+  --------------------------------------------------------------- */
+  let currentGoal = null;
+
+  form.addEventListener("submit", function (e) {
+    e.preventDefault();
+    formError.hidden = true;
+
+    const origin = form.origin.value.trim();
+    const destination = form.destination.value.trim();
+    const nights = parseInt(form.nights.value, 10);
+    const budget = form.budget.value ? parseInt(form.budget.value, 10) : null;
+    const area = form.area.value || null;
+
+    if (!origin || !destination) {
+      formError.textContent = "Please fill in where you're leaving from and going to.";
+      formError.hidden = false;
+      return;
+    }
+    if (!nights || nights < 1) {
+      formError.textContent = "Nights should be at least 1.";
+      formError.hidden = false;
+      return;
+    }
+
+    currentGoal = { origin, destination, nights, budget, area };
+    saveMemory({ origin, budget, area });
+    renderMemoryChip({ origin, budget, area });
+
+    runAgent(currentGoal);
+  });
+
+  async function runAgent(goal) {
+    submitBtn.disabled = true;
+    submitBtn.textContent = "Planning…";
+    journeyEmpty.hidden = true;
+    approvalZone.innerHTML = "";
+    resultZone.innerHTML = "";
+    buildRoute();
+
+    // -- search flights (with re-plan/retry if budget yields nothing) --
+    setStepState("flights", "active");
+    await wait(500);
+    let flights = searchFlights(goal.budget);
+    if (!flights.length && goal.budget) {
+      setStepDetail("flights", '<p style="color:var(--slate);font-size:0.88rem;margin:0 0 0.5rem;">Nothing under ' + money(goal.budget) + ' — widening the search…</p>');
+      await wait(600);
+      flights = searchFlights(null);
+    }
+    renderFlights(flights);
+    setStepState("flights", "done");
+
+    // -- search hotels --
+    setStepState("hotels", "active");
+    await wait(500);
+    const hotels = searchHotels(goal.area);
+    renderHotels(hotels, goal.area);
+    setStepState("hotels", "done");
+
+    // -- check weather --
+    setStepState("weather", "active");
+    await wait(400);
+    const weather = getWeather(goal.destination);
+    setStepDetail("weather",
+      '<div class="weather-line">' + iconWeather + '<span>' + weather.forecast + ' in ' + escapeHtml(goal.destination) + '</span></div>' +
+      '<div class="weather-source">Simulated forecast — live weather not connected in this demo.</div>');
+    setStepState("weather", "done");
+
+    // -- reasoning: propose itinerary --
+    setStepState("itinerary", "active");
+    await wait(500);
+    const bestFlight = flights[0] || null;
+    const bestHotel = hotels[0] || null;
+    const totalCost = (bestFlight ? bestFlight.price : 0) + (bestHotel ? bestHotel.pricePerNight * goal.nights : 0);
+    setStepDetail("itinerary", '<p style="margin:0;color:var(--slate);font-size:0.88rem;">Picked the best-value flight and your top-rated hotel match.</p>');
+    setStepState("itinerary", "done");
+
+    // -- human-in-the-loop approval --
+    setStepState("approval", "active");
+    submitBtn.disabled = false;
+    submitBtn.textContent = "Plan my trip";
+    renderApproval(goal, bestFlight, bestHotel, totalCost);
+  }
+
+  function renderFlights(flights) {
+    if (!flights.length) {
+      setStepDetail("flights", '<p style="color:var(--slate);font-size:0.9rem;margin:0;">No flights matched — Wayfinder will book the hotel only.</p>');
+      return;
+    }
+    const items = flights.slice(0, 3).map(function (f, i) {
+      return '<li class="option' + (i === 0 ? ' option--best' : '') + '">' +
+        '<div>' + (i === 0 ? '<span class="option__badge">Best value</span><br>' : '') +
+        '<span class="option__main">' + f.airline + ' · ' + f.flight + '</span>' +
+        '<div class="option__meta">' + f.depart + ' – ' + f.arrive + (f.stops ? ", 1 stop" : ", nonstop") + '</div></div>' +
+        '<div class="option__price">' + money(f.price) + '</div></li>';
+    }).join("");
+    setStepDetail("flights", '<ul class="options">' + items + '</ul>');
+  }
+
+  function renderHotels(hotels, preferredArea) {
+    const note = preferredArea
+      ? '<p style="color:var(--slate);font-size:0.82rem;margin:0 0 0.5rem;">Matched to your preferred area: ' + preferredArea + '</p>'
+      : "";
+    const items = hotels.slice(0, 3).map(function (h, i) {
+      return '<li class="option' + (i === 0 ? ' option--best' : '') + '">' +
+        '<div>' + (i === 0 ? '<span class="option__badge">Top rated</span><br>' : '') +
+        '<span class="option__main">' + h.name + '</span>' +
+        '<div class="option__meta">' + h.area + ' · ' + h.rating.toFixed(1) + ' rating</div></div>' +
+        '<div class="option__price">' + money(h.pricePerNight) + '<div class="option__meta" style="text-align:right;">/ night</div></div></li>';
+    }).join("");
+    setStepDetail("hotels", note + '<ul class="options">' + items + '</ul>');
+  }
+
+  function renderApproval(goal, flight, hotel, totalCost) {
+    const html =
+      '<div class="ticket" role="group" aria-labelledby="approval-title">' +
+        '<h3 id="approval-title" style="font-family:var(--font-display);font-weight:600;font-size:1.15rem;margin:0 0 0.9rem;">Ready to book your trip?</h3>' +
+        '<div class="ticket__route">' +
+          '<div><div class="ticket__city">' + escapeHtml(goal.origin) + '</div><div class="ticket__city-sub">Departure</div></div>' +
+          '<div class="ticket__plane">' + iconPlane + '</div>' +
+          '<div style="text-align:right;"><div class="ticket__city">' + escapeHtml(goal.destination) + '</div><div class="ticket__city-sub">Arrival</div></div>' +
+        '</div>' +
+        '<div class="ticket__perf"></div>' +
+        '<div class="ticket__grid">' +
+          '<div><div class="ticket__stat-label">Flight</div><div class="ticket__stat-value">' + (flight ? flight.airline + ' ' + flight.flight : "Not included") + '</div></div>' +
+          '<div><div class="ticket__stat-label">Hotel</div><div class="ticket__stat-value">' + (hotel ? hotel.name : "Not included") + '</div></div>' +
+          '<div><div class="ticket__stat-label">Nights</div><div class="ticket__stat-value">' + goal.nights + '</div></div>' +
+        '</div>' +
+        '<div class="ticket__total">' +
+          '<span class="ticket__total-label">Total</span>' +
+          '<span class="ticket__total-value">' + money(totalCost) + '</span>' +
+        '</div>' +
+        '<div class="approval-actions">' +
+          '<button type="button" class="btn btn--approve" id="approve-btn">Approve booking</button>' +
+          '<button type="button" class="btn btn--decline" id="decline-btn">Decline</button>' +
+        '</div>' +
+      '</div>';
+    approvalZone.innerHTML = html;
+
+    const approveBtn = document.getElementById("approve-btn");
+    const declineBtn = document.getElementById("decline-btn");
+    approveBtn.focus();
+
+    approveBtn.addEventListener("click", function () {
+      approveBtn.disabled = true; declineBtn.disabled = true;
+      handleApproval(true, goal, flight, hotel, totalCost);
+    });
+    declineBtn.addEventListener("click", function () {
+      approveBtn.disabled = true; declineBtn.disabled = true;
+      handleApproval(false, goal, flight, hotel, totalCost);
+    });
+  }
+
+  async function handleApproval(approved, goal, flight, hotel, totalCost) {
+    setStepState("approval", "done");
+    setStepDetail("approval", '<p style="margin:0;color:var(--slate);font-size:0.88rem;">' + (approved ? "You approved this booking." : "You declined this booking.") + '</p>');
+
+    if (!approved) {
+      setStepState("booking", "pending");
+      const li = routeEl.querySelector('[data-step="booking"]');
+      li.querySelector(".route__dot").innerHTML = iconStop;
+      li.querySelector(".route__dot").style.borderColor = "var(--coral)";
+      li.querySelector(".route__dot").style.color = "var(--coral)";
+      approvalZone.innerHTML = "";
+      resultZone.innerHTML = '<div class="decline-note"><strong>Nothing was booked.</strong> Wayfinder never books without your say-so — no charge was made. Adjust your budget or preferences and plan again whenever you\'re ready.</div>';
+      return;
+    }
+
+    setStepState("booking", "active");
+    approvalZone.innerHTML = "";
+    await wait(700);
+    const confirmationId = "TRIP-" + Math.floor(10000 + Math.random() * 89999);
+    setStepState("booking", "done");
+
+    resultZone.innerHTML =
+      '<div class="confirmation-banner" role="status">' + iconCheck.replace('stroke-width="2.2"', 'stroke-width="2.5"') + '<span>Trip booked</span></div>' +
+      '<div class="ticket">' +
+        '<p class="confirmation-id">Confirmation ' + confirmationId + '</p>' +
+        '<div class="ticket__route">' +
+          '<div><div class="ticket__city">' + escapeHtml(goal.origin) + '</div><div class="ticket__city-sub">Departure</div></div>' +
+          '<div class="ticket__plane">' + iconPlane + '</div>' +
+          '<div style="text-align:right;"><div class="ticket__city">' + escapeHtml(goal.destination) + '</div><div class="ticket__city-sub">Arrival</div></div>' +
+        '</div>' +
+        '<div class="ticket__perf"></div>' +
+        '<div class="ticket__grid">' +
+          '<div><div class="ticket__stat-label">Flight</div><div class="ticket__stat-value">' + (flight ? flight.airline + ' ' + flight.flight : "Not included") + '</div></div>' +
+          '<div><div class="ticket__stat-label">Hotel</div><div class="ticket__stat-value">' + (hotel ? hotel.name : "Not included") + '</div></div>' +
+          '<div><div class="ticket__stat-label">Nights</div><div class="ticket__stat-value">' + goal.nights + '</div></div>' +
+        '</div>' +
+        '<div class="ticket__total"><span class="ticket__total-label">Total paid</span><span class="ticket__total-value">' + money(totalCost) + '</span></div>' +
+      '</div>' +
+      '<button type="button" class="btn btn--ghost" id="restart-btn" style="margin-top:1.1rem;">Plan another trip</button>';
+
+    document.getElementById("restart-btn").addEventListener("click", function () {
+      resultZone.innerHTML = "";
+      routeEl.hidden = true;
+      journeyEmpty.hidden = false;
+      document.getElementById("origin").focus();
+    });
+  }
+
+  function escapeHtml(str) {
+    const div = document.createElement("div");
+    div.textContent = str;
+    return div.innerHTML;
+  }
+})();
+</script>
+</body>
+</html>
